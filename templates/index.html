@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <title>Don't stop typing!</title>
+  </head>
+  <body>
+    <h1>Don't stop typing!</h1>
+    <div>
+      <p>If you stop typing, the text will disappear!</p>
+      <p id="status"></p>
+    </div>
+
+    <input type="text" id="text-input" placeholder="Type here" />
+
+    <script>
+      let typingTimer;
+      const inputField = document.getElementById('text-input');
+      const statusMessage = document.getElementById('status');
+
+      // Function to send text to Flask backend
+      function saveText(text) {
+        fetch('/save-text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            statusMessage.innerText =
+              'Text saved. Will delete after 5s of inactivity.';
+          });
+      }
+
+      // Detect typing and send data after 500ms of pause
+      inputField.addEventListener('input', () => {
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+          saveText(inputField.value);
+        }, 5000);
+      });
+
+      // Function to fetch stored text from the backend every second
+      function checkStoredText() {
+        fetch('/get-text')
+          .then((response) => response.json())
+          .then((data) => {
+            inputField.value = data.text;
+            if (data.text === '') {
+              statusMessage.innerText = 'Text deleted due to inactivity.';
+            }
+          });
+      }
+
+      // Poll the server every second to check for deleted text
+      setInterval(checkStoredText, 5000);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+body {
+  background-color: black;
+  color: aliceblue;
+  text-align: center;
+}
+
+input {
+  padding: 30px;
+  width: 400px;
+  border-radius: 30px;
+}
