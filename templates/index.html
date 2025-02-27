@@ -13,52 +13,72 @@
     <h1>Don't stop typing!</h1>
     <div>
       <p>If you stop typing, the text will disappear!</p>
-      <p id="status"></p>
+      <input type="text" id="myInput" placeholder="Type something..." />
+      <div id="status"></div>
     </div>
-
-    <input type="text" id="text-input" placeholder="Type here" />
-
     <script>
+      const inputField = document.getElementById('myInput');
+      const statusDiv = document.getElementById('status');
       let typingTimer;
-      const inputField = document.getElementById('text-input');
-      const statusMessage = document.getElementById('status');
+      let clearTimer;
+      const doneTypingInterval = 1000; // milliseconds = 3 seconds
+      const clearTextInterval = 3000;
 
-      // Function to send text to Flask backend
-      function saveText(text) {
-        fetch('/save-text', {
+      // while the user is typing remove the timer
+      inputField.addEventListener('input', function () {
+        clearTimeout(typingTimer);
+        clearTimeout(clearTimer);
+        statusDiv.textContent = 'Typing...';
+
+        typingTimer = setTimeout(doneTyping, doneTypingInterval);
+      });
+
+      // Function to run when the user has stopped typing
+
+      // Function to run when user has stopped typing
+      function doneTyping() {
+        statusDiv.textContent = 'Stopped typing';
+
+        // First, send the data to process-input
+        fetch('/process_input', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: text }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text: inputField.value }),
         })
           .then((response) => response.json())
           .then((data) => {
-            statusMessage.innerText =
-              'Text saved. Will delete after 5s of inactivity.';
+            console.log('Success:', data);
+
+            // Set timer to clear the text after clearTextInterval
+            clearTimer = setTimeout(clearText, clearTextInterval);
+            statusDiv.textContent = 'Will clear text soon...';
+          })
+          .catch((error) => {
+            console.error('Error:', error);
           });
+
+        // Function to clear the text
+        function clearText() {
+          fetch('/delete_text', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log('Text deleted:', data);
+              // Clear the input field
+              inputField.value = '';
+              statusDiv.textContent = 'The text is gone!';
+            })
+            .catch((error) => {
+              console.error('Error:', error);
+            });
+        }
       }
-
-      // Detect typing and send data after 500ms of pause
-      inputField.addEventListener('input', () => {
-        clearTimeout(typingTimer);
-        typingTimer = setTimeout(() => {
-          saveText(inputField.value);
-        }, 5000);
-      });
-
-      // Function to fetch stored text from the backend every second
-      function checkStoredText() {
-        fetch('/get-text')
-          .then((response) => response.json())
-          .then((data) => {
-            inputField.value = data.text;
-            if (data.text === '') {
-              statusMessage.innerText = 'Text deleted due to inactivity.';
-            }
-          });
-      }
-
-      // Poll the server every second to check for deleted text
-      setInterval(checkStoredText, 5000);
     </script>
   </body>
 </html>
