@@ -1,11 +1,20 @@
 body {
   background-color: black;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: aliceblue;
-  text-align: center;
+  display: grid;
+  place-items: center; /* Centers both horizontally and vertically */
+  height: 100vh;
+  margin: 0;
 }
 
 input {
   padding: 30px;
   width: 400px;
   border-radius: 30px;
+}
+
+.warning {
+  text-align: center;
+  color: brown;
 }
